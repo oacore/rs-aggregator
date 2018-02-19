@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	   					   http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <!-- sitemap-converter-provider is an implementationnl.knaw.dans.rs.aggregator.syncore.SitemapConverterProviderider -->
+    <bean id="sitemap-converter-provider" class="nl.knaw.dans.rs.aggregator.sync.FsSitemapConverterProvider"/>
+
+    <!-- verification-policy is an implementationnl.knaw.dans.rs.aggregator.syncore.VerificationPolicylicy -->
+    <bean id="verification-policy" class="nl.knaw.dans.rs.aggregator.sync.DefaultVerificationPolicy"/>
+
+    <!-- resource-manager is an implementationnl.knaw.dans.rs.aggregator.syncore.ResourceManagerager -->
+    <bean id="resource-manager" class="uk.ac.core.resync.syncore.COREResourceManager">
+        <property name="coreApiEndpoint" value="http://localhost:8000/datadump"/>
+    </bean>
+
+    <!-- sync-post-processor is an implementationnl.knaw.dans.rs.aggregator.syncore.SyncPostProcessorssor -->
+    <bean id="sync-post-processor" class="nl.knaw.dans.rs.aggregator.sync.DefaultSyncPostProcessor">
+        <!-- How many most recRsPropertiesties files should be kept -->
+        <property name="keepValidSyncProps" value="10"/>
+    </bean>
+
+    <!-- Main class for synchronization -->
+    <bean id="sync-job" class="uk.ac.core.resync.sync.CORESyncJob">
+        <property name="sitemapConverterProvider" ref="sitemap-converter-provider"/>
+        <property name="verificationPolicy" ref="verification-policy"/>
+        <property name="resourceManager" ref="resource-manager"/>
+        <property name="syncPostProcessor" ref="sync-post-processor"/>
+        <!-- Location of file with list of uri's, each line contains a capability list uri -->
+        <property name="uriListLocation" value="cfg/uri-list.txt"/>
+        <!-- Location of directory that will contain synchronized resources and metadata -->
+        <property name="baseDirectory" value="target/destination"/>
+    </bean>
+
+    <!-- Choose and configure a job-scheduler (or roll your own) -->
+    <!-- RunOnceScheduler will run synchronisation once and quit. -->
+    <bean id="job-scheduler" class="nl.knaw.dans.rs.aggregator.schedule.RunOnceScheduler"/>
+
+    <!-- RunWithFixedDelay will run synchronisation repeatedly
+            with a fixed delay between end and start of successive runs. -->
+    <!--<bean id="job-scheduler" class="nl.knaw.dans.rs.aggregator.schedule.RunWithFixedDelay">
+        <?Description After maxErrorCount errors have been caught the service will exit. Default=3 ?>
+        <property name="maxErrorCount" value="3"/>
+        <?Description Delay between successive synchronisation runs in minutes. Default=60 ?>
+        <property name="delay" value="60"/>
+    </bean>-->
+
+    <!-- RunAtFixedRate will run synchronisation repeatedly at a fixed time.
+    <bean id="job-scheduler" class="nl.knaw.dans.rs.aggregator.schedule.RunAtFixedRate">
+        <?Description after maxErrorCount errors have been caught the service will exit. Default=3 ?>
+        <property name="maxErrorCount" value="3"/>
+        <?Description Time in minutes between start of synchronisation runs. Default=60 ?>
+        <property name="period" value="#{ 1 }"/>
+        <?Description At what time (hour and minute) should synchronisation first run. Default=00:00 ?>
+        <property name="hourOfDay" value="00"/>
+        <property name="minuteOfHour" value="00"/>
+    </bean>-->
+
+</beans>

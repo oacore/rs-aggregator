@@ -81,7 +81,7 @@ public class AbstractUriReader {
     return result;
   }
 
-  private void closeResponse(CloseableHttpResponse response) {
+  protected void closeResponse(CloseableHttpResponse response) {
     if (response != null) try {
       response.close();
     } catch (IOException e) {

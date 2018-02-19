@@ -162,7 +162,7 @@ public class RsExplorer extends AbstractUriExplorer {
     return result;
   }
 
-  private Capability extractCapability(Result<RsRoot> result) {
+  protected Capability extractCapability(Result<RsRoot> result) {
     String xmlString = result.getContent()
       .map(RsRoot::getMetadata).flatMap(RsMd::getCapability).orElse("");
     Capability capa = null;
@@ -175,7 +175,7 @@ public class RsExplorer extends AbstractUriExplorer {
     return capa;
   }
 
-  private void verifyUpRelation(Result<RsRoot> result, Result<RsRoot> parentResult, Capability capability) {
+  protected void verifyUpRelation(Result<RsRoot> result, Result<RsRoot> parentResult, Capability capability) {
     if (result.getContent().isPresent() && parentResult.getContent().isPresent()) {
       Capability parentCapa = extractCapability(parentResult);
 
@@ -195,7 +195,7 @@ public class RsExplorer extends AbstractUriExplorer {
 
   }
 
-  private void verifyIndexRelation(Result<RsRoot> result, Result<RsRoot> parentResult, Capability capability) {
+  protected void verifyIndexRelation(Result<RsRoot> result, Result<RsRoot> parentResult, Capability capability) {
     if (result.getContent().isPresent() && parentResult.getContent().isPresent()) {
       Capability parentCapa = extractCapability(parentResult);
 
@@ -214,7 +214,7 @@ public class RsExplorer extends AbstractUriExplorer {
     }
   }
 
-  private void verifyChildRelation(Result<RsRoot> result, Result<RsRoot> childResult, Capability capability) {
+  protected void verifyChildRelation(Result<RsRoot> result, Result<RsRoot> childResult, Capability capability) {
     if (result.getContent().isPresent() && childResult.getContent().isPresent()) {
       Capability childCapa = extractCapability(childResult);
 
@@ -245,7 +245,7 @@ public class RsExplorer extends AbstractUriExplorer {
     return new RsBuilder(this.getRsContext()).setInputStream(inStream).build().orElse(null);
   };
 
-  private LambdaUtil.BiFunction_WithExceptions<URI, HttpResponse, RsRoot, Exception> getConverter() {
+  protected LambdaUtil.BiFunction_WithExceptions<URI, HttpResponse, RsRoot, Exception> getConverter() {
     if (converter == null) {
       converter = rsConverter;
     }

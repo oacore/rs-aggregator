@@ -30,31 +30,31 @@ public class SyncWorker implements RsConstants {
   private static final int MAX_DOWNLOADS = Integer.MAX_VALUE;
   private static final int MAX_DOWNLOAD_RETRY = 3;
 
-  private SitemapCollector sitemapCollector;
-  private ResourceManager resourceManager;
-  private VerificationPolicy verificationPolicy;
+  protected SitemapCollector sitemapCollector;
+  protected ResourceManager resourceManager;
+  protected VerificationPolicy verificationPolicy;
 
-  private int maxDownloads = MAX_DOWNLOADS;
-  private int maxDownloadRetry = MAX_DOWNLOAD_RETRY;
-  private boolean trialRun = false;
+  protected int maxDownloads = MAX_DOWNLOADS;
+  protected int maxDownloadRetry = MAX_DOWNLOAD_RETRY;
+  protected boolean trialRun = false;
 
-  private int itemCount;
-  private int verifiedItems;
-  private int itemsDeleted;
-  private int itemsCreated;
-  private int itemsUpdated;
-  private int itemsRemain;
-  private int itemsNoAction; // change='deleted' and resource does not exists.
-  private int failedDeletions;
-  private int failedCreations;
-  private int failedUpdates;
-  private int failedRemains;
-  private int totalFailures;
+  protected int itemCount;
+  protected int verifiedItems;
+  protected int itemsDeleted;
+  protected int itemsCreated;
+  protected int itemsUpdated;
+  protected int itemsRemain;
+  protected int itemsNoAction; // change='deleted' and resource does not exists.
+  protected int failedDeletions;
+  protected int failedCreations;
+  protected int failedUpdates;
+  protected int failedRemains;
+  protected int totalFailures;
 
-  private int downloadCount;
-  private boolean syncComplete;
+  protected int downloadCount;
+  protected boolean syncComplete;
 
-  private int preventedActions;
+  protected int preventedActions;
 
   public SyncWorker() {
 
@@ -153,7 +153,7 @@ public class SyncWorker implements RsConstants {
     syncComplete = false;
   }
 
-  private void syncLocalResources(PathFinder pathFinder, RsProperties syncProps) {
+  protected void syncLocalResources(PathFinder pathFinder, RsProperties syncProps) {
     SitemapCollector collector = getSitemapCollector();
     collector.collectSitemaps(pathFinder, syncProps);
     if (collector.hasErrors()) {
@@ -181,7 +181,7 @@ public class SyncWorker implements RsConstants {
       itemsDeleted, failedDeletions, itemsNoAction, trialRun, pathFinder.getCapabilityListUri());
   }
 
-  private void syncItem(URI normalizedURI, UrlItem item) {
+  protected void syncItem(URI normalizedURI, UrlItem item) {
     itemCount++;
     String change = item.getMetadata().flatMap(RsMd::getChange).orElse(CH_REMAIN);
     boolean resourceExists = resourceManager.exists(normalizedURI);
@@ -217,7 +217,7 @@ public class SyncWorker implements RsConstants {
     }
   }
 
-  private boolean verifyChange(URI normalizedURI, UrlItem item, boolean resourceExists) {
+  protected boolean verifyChange(URI normalizedURI, UrlItem item, boolean resourceExists) {
     boolean success;
     if (resourceExists) {
       boolean verified = doVerify(normalizedURI, item);
@@ -254,7 +254,7 @@ public class SyncWorker implements RsConstants {
     return verified;
   }
 
-  private boolean actionAllowed(URI normalizedURI) {
+  protected boolean actionAllowed(URI normalizedURI) {
     boolean allowed = true;
     if (trialRun) {
       logger.debug("Trial run. No action on: {}", normalizedURI);
@@ -268,7 +268,7 @@ public class SyncWorker implements RsConstants {
     return allowed;
   }
 
-  private boolean doVerify(URI normalizedURI, UrlItem item) {
+  protected boolean doVerify(URI normalizedURI, UrlItem item) {
     VerificationPolicy policy = getVerificationPolicy();
     VerificationStatus stHash = VerificationStatus.not_verified;
     VerificationStatus stLastMod = VerificationStatus.not_verified;

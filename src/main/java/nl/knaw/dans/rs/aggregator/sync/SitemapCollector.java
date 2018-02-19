@@ -49,11 +49,11 @@ public class SitemapCollector implements RsConstants {
   private ZonedDateTime asOfDateTime;
   private LambdaUtil.BiFunction_WithExceptions<URI, HttpResponse, RsRoot, Exception> converter;
 
-  private ResultIndex currentIndex;
-  private Set<String> invalidUris;
-  private List<Result<?>> errorResults;
-  private List<Result<?>> unhandledResults;
-  private Map<URI, UrlItem> recentItems;
+  protected ResultIndex currentIndex;
+  protected Set<String> invalidUris;
+  protected List<Result<?>> errorResults;
+  protected List<Result<?>> unhandledResults;
+  protected Map<URI, UrlItem> recentItems;
   private ZonedDateTime ultimateResourceListAt;
   private ZonedDateTime ultimateChangeListFrom;
 
@@ -235,7 +235,7 @@ public class SitemapCollector implements RsConstants {
     reportResults(pathFinder, syncProps);
   }
 
-  private void setNewResourceListFound(PathFinder pathFinder) {
+  protected void setNewResourceListFound(PathFinder pathFinder) {
     File prevSyncPropFile = pathFinder.getPrevSyncPropXmlFile();
     if (prevSyncPropFile != null) {
       RsProperties prevSyncProps = new RsProperties();
@@ -249,7 +249,7 @@ public class SitemapCollector implements RsConstants {
     }
   }
 
-  private void reportResults(PathFinder pathFinder, RsProperties syncProps) {
+  protected void reportResults(PathFinder pathFinder, RsProperties syncProps) {
     syncProps.setDateTime(Sync.PROP_CL_AS_OF_DATE_TIME, asOfDateTime);
     syncProps.setProperty(Sync.PROP_CL_CONVERTER, getConverter().toString());
     syncProps.setInt(Sync.PROP_CL_COUNT_INVALID_URIS, invalidUris.size());
@@ -283,7 +283,7 @@ public class SitemapCollector implements RsConstants {
     }
   }
 
-  private void reset() {
+  protected void reset() {
     currentIndex = null;
     errorResults = new ArrayList<>();
     unhandledResults = new ArrayList<>();
@@ -308,7 +308,7 @@ public class SitemapCollector implements RsConstants {
   }
 
   @SuppressWarnings("unchecked")
-  private void analyze(Result<?> result) {
+  public void analyze(Result<?> result) {
     if (result.getContent().isPresent()) {
       Object content = result.getContent().get();
       if (content instanceof Sitemapindex) {
@@ -483,6 +483,7 @@ public class SitemapCollector implements RsConstants {
       logger.warn("Missing required loc element on urlItem: {}", usResult);
     }
   }
+
 
 //  private PathFinder getCurrentPathFinder() {
 //    if (currentPathFinder == null) throw new IllegalStateException("No current PathFinder");

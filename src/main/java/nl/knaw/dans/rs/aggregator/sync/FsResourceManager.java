@@ -35,7 +35,7 @@ public class FsResourceManager implements ResourceManager {
   private ResourceReader resourceReader;
   private CloseableHttpClient httpClient;
 
-  private PathFinder getPathFinder() {
+  protected PathFinder getPathFinder() {
     if (pathFinder == null) throw new IllegalStateException("Missing PathFinder. No PathFinder was set.");
     return pathFinder;
   }
@@ -56,7 +56,7 @@ public class FsResourceManager implements ResourceManager {
     return this;
   }
 
-  private ResourceReader getResourceReader() {
+  protected ResourceReader getResourceReader() {
     if (resourceReader == null) {
       resourceReader = new ResourceReader(getHttpClient());
     }

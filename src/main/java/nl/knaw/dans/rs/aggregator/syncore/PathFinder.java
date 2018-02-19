@@ -172,9 +172,10 @@ public class PathFinder {
     URI otherUri = NormURI.normalize(uri).orElse(null);
     String otherHost = otherUri.getHost();
     int otherPort = otherUri.getPort();
-    if (!host.equals(otherHost)) {
+    // MC: removed for local testing
+    /*if (!host.equals(otherHost)) {
       throw new IllegalArgumentException("Normalized host names unequal. this host:" + host + " other: " + otherHost);
-    } else if (port != otherPort) {
+    } else*/ if (port != otherPort) {
       throw new IllegalArgumentException("Ports unequal. this port:" + port + " other: " + otherPort);
     }
     return otherUri.getPath();

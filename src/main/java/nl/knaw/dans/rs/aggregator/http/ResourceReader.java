@@ -21,7 +21,7 @@ import java.util.Date;
  */
 public class ResourceReader extends AbstractUriReader {
 
-  private File currentFile;
+  protected File currentFile;
 
 
   public ResourceReader(CloseableHttpClient httpClient) {
@@ -42,7 +42,7 @@ public class ResourceReader extends AbstractUriReader {
     return currentFile;
   }
 
-  private LambdaUtil.BiFunction_WithExceptions<URI, HttpResponse, File, Exception> fileWriter = (uri, response) -> {
+  protected LambdaUtil.BiFunction_WithExceptions<URI, HttpResponse, File, Exception> fileWriter = (uri, response) -> {
     HttpEntity entity = response.getEntity();
     if (entity != null) {
       File file = getCurrentFile();
