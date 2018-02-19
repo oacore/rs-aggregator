@@ -12,7 +12,10 @@
 hs_err_pid*
 
 .idea/
-target/
-logs/
-docker/destination/
+
+*.iml
+tmp
+logs
+target
+docker/destination
 docker/cfg/stop
