@@ -1,6 +1,5 @@
 package uk.ac.core.resync.sync;
 
-import nl.knaw.dans.rs.aggregator.http.ResourceReader;
 import nl.knaw.dans.rs.aggregator.schedule.Job;
 import nl.knaw.dans.rs.aggregator.sync.*;
 import nl.knaw.dans.rs.aggregator.syncore.*;
@@ -14,6 +13,8 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.TrustStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.core.resync.http.COREResourceReader;
+import uk.ac.core.resync.syncore.COREBatchResourceManager;
 import uk.ac.core.resync.syncore.COREPathFinder;
 import uk.ac.core.resync.syncore.COREResourceManager;
 
@@ -35,9 +36,9 @@ import java.util.Scanner;
 /**
  * Created on 2017-05-03 17:05.
  */
-public class CORESyncJob implements Job {
+public class COREBatchSyncJob implements Job {
 
-    private static Logger logger = LoggerFactory.getLogger(CORESyncJob.class);
+    private static Logger logger = LoggerFactory.getLogger(COREBatchSyncJob.class);
 
     private CloseableHttpClient httpClient;
     private ResourceSyncContext rsContext;
@@ -197,7 +198,7 @@ public class CORESyncJob implements Job {
         SyncWorker syncWorker =getCORESyncWorker()
                 .withSitemapCollector(sitemapCollector)
                 .withVerificationPolicy(getVerificationPolicy())
-                .withResourceManager(new COREResourceManager().withResourceReader(new ResourceReader(this.getHttpClient())));
+                .withResourceManager(new COREBatchResourceManager().withResourceReader(new COREResourceReader(this.getHttpClient())));
         SyncPostProcessor syncPostProcessor = getSyncPostProcessor();
 
         for (URI uri : uriList) {

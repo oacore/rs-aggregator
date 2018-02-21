@@ -8,10 +8,10 @@
     <bean id="sitemap-converter-provider" class="nl.knaw.dans.rs.aggregator.sync.FsSitemapConverterProvider"/>
 
     <!-- verification-policy is an implementationnl.knaw.dans.rs.aggregator.syncore.VerificationPolicylicy -->
-    <bean id="verification-policy" class="uk.ac.core.resync.syncore.COREVerificationPolicy"/>
+    <bean id="verification-policy" class="nl.knaw.dans.rs.aggregator.sync.DefaultVerificationPolicy"/>
 
     <!-- resource-manager is an implementationnl.knaw.dans.rs.aggregator.syncore.ResourceManagerager -->
-    <bean id="resource-manager" class="nl.knaw.dans.rs.aggregator.sync.FsResourceManager">
+    <bean id="resource-manager" class="uk.ac.core.resync.syncore.COREBatchResourceManager">
     </bean>
 
     <!-- sync-post-processor is an implementationnl.knaw.dans.rs.aggregator.syncore.SyncPostProcessorssor -->
@@ -20,11 +20,11 @@
         <property name="keepValidSyncProps" value="10"/>
     </bean>
     <!-- sync-post-processor is an implementationnl.knaw.dans.rs.aggregator.syncore.SyncPostProcessorssor -->
-    <bean id="sync-worker" class="uk.ac.core.resync.sync.CORESyncWorker">
+    <bean id="sync-worker" class="uk.ac.core.resync.sync.COREBatchSyncWorker">
     </bean>
 
     <!-- Main class for synchronization -->
-    <bean id="sync-job" class="uk.ac.core.resync.sync.CORESyncJob">
+    <bean id="sync-job" class="uk.ac.core.resync.sync.COREBatchSyncJob">
         <property name="sitemapConverterProvider" ref="sitemap-converter-provider"/>
         <property name="coreSyncWorker" ref="sync-worker"/>
         <property name="verificationPolicy" ref="verification-policy"/>

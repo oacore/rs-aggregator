@@ -42,6 +42,10 @@ public class COREResourceReader extends ResourceReader {
         return executePost(uri, parameters,fileWriter);
     }
 
+    public Result<File> read(URI uri){
+        return this.execute(uri, fileWriter);
+    }
+
     public <R> Result<R> executePost(URI uri, String parameters, LambdaUtil.BiFunction_WithExceptions<URI, HttpResponse, R, ?> func) {
         logger.debug("Executing GET on uri {}", uri);
         currentUri = uri;
