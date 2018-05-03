@@ -22,7 +22,7 @@ public class COREResourceManager extends FsResourceManager {
 
     private String coreApiEndpoint;
 
-    private final static String CORE_DEFAULT_API_ENDPOINT =  "http://core.ac.uk/datadump";
+    private final static String CORE_DEFAULT_API_ENDPOINT =  "https://core.ac.uk/datadump";
 
     @Override
     public boolean create(@Nonnull URI normalizedURI) {

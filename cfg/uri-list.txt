@@ -1,1 +1,1 @@
-http://resourcesync.core.ac.uk/sitemaps/core/metadata/capabilitylist.xml
+http://core.ac.uk/resync/changelist/1525153140000/changelist_index.xml
