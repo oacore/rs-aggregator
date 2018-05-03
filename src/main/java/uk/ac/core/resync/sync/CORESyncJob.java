@@ -1,6 +1,5 @@
 package uk.ac.core.resync.sync;
 
-import nl.knaw.dans.rs.aggregator.http.ResourceReader;
 import nl.knaw.dans.rs.aggregator.schedule.Job;
 import nl.knaw.dans.rs.aggregator.sync.*;
 import nl.knaw.dans.rs.aggregator.syncore.*;
@@ -14,6 +13,7 @@ import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.TrustStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.core.resync.http.COREResourceReader;
 import uk.ac.core.resync.syncore.COREPathFinder;
 import uk.ac.core.resync.syncore.COREResourceManager;
 
@@ -115,6 +115,7 @@ public class CORESyncJob implements Job {
                 e.printStackTrace();
             }
             httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+            httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
         }
 
         return httpClient;
@@ -197,7 +198,7 @@ public class CORESyncJob implements Job {
         SyncWorker syncWorker =getCORESyncWorker()
                 .withSitemapCollector(sitemapCollector)
                 .withVerificationPolicy(getVerificationPolicy())
-                .withResourceManager(new COREResourceManager().withResourceReader(new ResourceReader(this.getHttpClient())));
+                .withResourceManager(new COREResourceManager().withResourceReader(new COREResourceReader(this.getHttpClient())));
         SyncPostProcessor syncPostProcessor = getSyncPostProcessor();
 
         for (URI uri : uriList) {

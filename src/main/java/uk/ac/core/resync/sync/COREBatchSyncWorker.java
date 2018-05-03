@@ -11,6 +11,7 @@ import uk.ac.core.resync.syncore.COREBatchResourceManager;
 
 import javax.xml.bind.JAXBException;
 import java.io.ByteArrayInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -26,17 +27,24 @@ import java.util.stream.Stream;
 public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloadedListener {
 
     private final static Logger logger = LoggerFactory.getLogger(COREBatchSyncWorker.class);
-    private static final int COREAPI_BATCH_SIZE = 100;
+    private static final int COREAPI_BATCH_SIZE = 500;
     private CORESitemapCollector collector;
     private PathFinder pathFinder;
+    private FileWriter fileWriter;
+    private RsRoot mainManifest;
 
     public COREBatchSyncWorker() {
         super();
+        this.logger.info("Batch size is: {}", COREAPI_BATCH_SIZE);
+
     }
 
     @Override
     protected void syncLocalResources(PathFinder pathFinder, RsProperties syncProps) {
+
+
         this.pathFinder = pathFinder;
+
         this.collector = getCORESitemapCollector();
         collector.collectSitemaps(pathFinder, syncProps, this);
         if (collector.hasErrors()) {
@@ -98,7 +106,7 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
         urisToSync.forEach(e -> verifyAndAddToBatch(e));
         boolean batchDownloadSuccess = this.getCOREBatchResourceManager().performBatchDownload();
         downloadCount++;
-        if (!batchDownloadSuccess){
+        if (!batchDownloadSuccess) {
             totalFailures++;
         }
         Long numberOfVerified = this.doVerifyBatch(urisToSync);
@@ -183,7 +191,16 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
             InputStream inStream = new ByteArrayInputStream(xmlString.getBytes("UTF-8"));
             RsRoot rsRoot = new RsBuilder(this.getSitemapCollector().getRsContext()).setInputStream(inStream).build().orElse(null);
             List<UrlItem> itemList = rsRoot.getItemList();
-
+//            if (itemList.size() > 0) {
+//                if (mainManifest==null){
+//                    mainManifest=rsRoot;
+//                }
+//                this.mainManifest.getItemList().addAll(itemList);
+//                Path toWrite = Paths.get(this.getCOREBatchResourceManager().getCOREPathfinder().getResourceDirectory().getPath(), "mainManifest.xml" );
+//                Files.write(toWrite, (new RsBuilder(this.getSitemapCollector().getRsContext()).toXml(this.mainManifest, true)).getBytes());
+//
+//
+//            }
             Long numberOfValidItems = itemList.stream().map(item -> {
                 try {
                     return super.doVerify(this.matchURIToItemToDownload(urisToSync, item), item);

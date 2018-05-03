@@ -48,6 +48,7 @@ public class ResourceReader extends AbstractUriReader {
       File file = getCurrentFile();
       file.getParentFile().mkdirs();
       InputStream instream = entity.getContent();
+      logger.info("Writing file {}", file.getAbsolutePath());
       OutputStream outstream = new FileOutputStream(file);
       byte[] buffer = new byte[8 * 1024];
       int bytesRead;

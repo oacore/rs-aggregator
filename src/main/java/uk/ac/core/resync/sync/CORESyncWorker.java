@@ -17,7 +17,6 @@ import uk.ac.core.resync.syncore.COREResourceManager;
 public class CORESyncWorker extends SyncWorker implements SitemapDownloadedListener {
 
     private final static Logger logger = LoggerFactory.getLogger(CORESyncWorker.class);
-    private static final int COREAPI_BATCH_SIZE = 100;
     private CORESitemapCollector collector;
     private PathFinder pathFinder;
 
@@ -70,6 +69,7 @@ public class CORESyncWorker extends SyncWorker implements SitemapDownloadedListe
                 if (content instanceof Urlset) {
                     Urlset urlSet = (Urlset) content;
                     urlSet.getItemList().stream().forEach(e -> this.executeDownload(e));
+
                 }
 
             }
@@ -81,6 +81,15 @@ public class CORESyncWorker extends SyncWorker implements SitemapDownloadedListe
     private void executeDownload(UrlItem urlItem) {
 
         syncItem(urlItem.getNormalizedUri().get(), urlItem);
+        logger.info("====> synchronized={}, new ResourceList={}, items={}, verified={}, " +
+                        "failures={}, downloads={} [success/failures] " +
+                        "created={}/{}, updated={}/{}, remain={}/{}, deleted={}/{}, " +
+                        "no_action={}, trial run={}, resource set={}",
+                syncComplete, collector.hasNewResourceList(), itemCount, verifiedItems, totalFailures, downloadCount, itemsCreated,
+                failedCreations, itemsUpdated,
+                failedUpdates, itemsRemain, failedRemains,
+                itemsDeleted, failedDeletions, itemsNoAction, trialRun, pathFinder.getCapabilityListUri());
+
     }
 
     private CORESitemapCollector getCORESitemapCollector() {

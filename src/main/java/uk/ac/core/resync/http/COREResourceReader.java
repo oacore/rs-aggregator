@@ -34,15 +34,15 @@ public class COREResourceReader extends ResourceReader {
 
     public Result<File> readWithPost(String url, String parameters, File file) throws URISyntaxException {
         URI uri = new URI(url);
-        return readWithPost(uri,parameters, file);
+        return readWithPost(uri, parameters, file);
     }
 
     public Result<File> readWithPost(URI uri, String parameters, File file) {
         currentFile = file;
-        return executePost(uri, parameters,fileWriter);
+        return executePost(uri, parameters, fileWriter);
     }
 
-    public Result<File> read(URI uri){
+    public Result<File> read(URI uri) {
         return this.execute(uri, fileWriter);
     }
 
@@ -53,8 +53,8 @@ public class COREResourceReader extends ResourceReader {
         HttpPost request = new HttpPost(uri);
 
         CloseableHttpResponse response = null;
-        try  {
-            System.out.println("parameters = " + parameters);
+        try {
+            logger.info("parameters = {}", parameters);
             HttpEntity entity = new ByteArrayEntity(parameters.getBytes("UTF-8"));
             request.setEntity(entity);
             response = getHttpClient().execute(request);
