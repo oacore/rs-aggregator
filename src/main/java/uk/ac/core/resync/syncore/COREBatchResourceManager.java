@@ -36,6 +36,7 @@ public class COREBatchResourceManager extends FsResourceManager implements Batch
     Set<URI> buffer = new HashSet<>();
     private final static String CORE_DEFAULT_API_ENDPOINT = "https://core.ac.uk/datadump";
 
+
     @Override
     public boolean create(@Nonnull URI normalizedURI) {
         return prepareToDownload(normalizedURI);
@@ -81,11 +82,14 @@ public class COREBatchResourceManager extends FsResourceManager implements Batch
         } else {
             logger.warn("Failed download of {}: ", this.getCoreApiEndpoint(), result.lastError());
         }
-        buffer.clear();
+
         return downloaded;
 
     }
 
+    public void clearBatch(){
+        buffer.clear();
+    }
     private void unzipDump(File resourcePath) throws IOException {
         byte[] buffer = new byte[1024];
         ZipInputStream zis = new ZipInputStream(new FileInputStream(resourcePath));

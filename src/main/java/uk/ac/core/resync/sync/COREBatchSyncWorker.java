@@ -27,11 +27,14 @@ import java.util.stream.Stream;
 public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloadedListener {
 
     private final static Logger logger = LoggerFactory.getLogger(COREBatchSyncWorker.class);
-    private static final int COREAPI_BATCH_SIZE = 500;
+    private static final int COREAPI_BATCH_SIZE = 100;
     private CORESitemapCollector collector;
     private PathFinder pathFinder;
     private FileWriter fileWriter;
     private RsRoot mainManifest;
+    private Integer attempts;
+    private final static Integer MAX_RETRIES = 5;
+    private static final int[] FIBONACCI = new int[] { 1, 2, 3, 5, 8, 13 };
 
     public COREBatchSyncWorker() {
         super();
@@ -70,6 +73,13 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
                 failedCreations, itemsUpdated,
                 failedUpdates, itemsRemain, failedRemains,
                 itemsDeleted, failedDeletions, itemsNoAction, trialRun, pathFinder.getCapabilityListUri());
+        /**       Path path = Paths.get("cfg/uri-list.txt");
+         try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+         writer.write("http://core.ac.uk/resync/changelist/"+System.currentTimeMillis()+"/changelist_index.xml");
+         } catch (IOException e) {
+         logger.error("Failed to write cfg/uri-list.txt");
+         }**/
+        logger.info("Next changelist to download http://core.ac.uk/resync/changelist/{}/changelist_index.xml", System.currentTimeMillis());
     }
 
 
@@ -101,14 +111,32 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
 
     private void syncBatchItems(List<UrlItem> urisToSync) {
         itemCount += urisToSync.size();
-
-
+        this.getCOREBatchResourceManager().clearBatch();
         urisToSync.forEach(e -> verifyAndAddToBatch(e));
+        this.attempts=1;
         boolean batchDownloadSuccess = this.getCOREBatchResourceManager().performBatchDownload();
         downloadCount++;
         if (!batchDownloadSuccess) {
             totalFailures++;
         }
+
+        while (!batchDownloadSuccess && this.attempts <MAX_RETRIES){
+            this.attempts++;
+            Integer toWait = FIBONACCI[this.attempts] * 1000;
+            logger.info("Exponential backoff. Waiting for {}", toWait);
+            try {
+                Thread.sleep(toWait);
+            } catch (InterruptedException e) {
+                logger.error("Exponential backoff interrupted");
+            }
+
+            batchDownloadSuccess= this.getCOREBatchResourceManager().performBatchDownload();
+            downloadCount++;
+            if (!batchDownloadSuccess) {
+                totalFailures++;
+            }
+        }
+
         Long numberOfVerified = this.doVerifyBatch(urisToSync);
         logger.info("====> synchronized={}, new ResourceList={}, items={}, verified={}, " +
                         "failures={}, downloads={} [success/failures] " +
