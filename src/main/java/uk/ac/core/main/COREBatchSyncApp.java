@@ -38,6 +38,13 @@ public class COREBatchSyncApp {
     } else {
       appContextLocation = APP_CONTEXT_LOCATION;
     }
+    boolean isManualUpdate=false;
+    if (args.length>1){
+      String additionalArg = args[1];
+      if (additionalArg.equals("--manual-update")){
+        isManualUpdate=true;
+      }
+    }
     logger.info("Configuration file: {}", appContextLocation);
 
     JobScheduler scheduler;
@@ -46,6 +53,7 @@ public class COREBatchSyncApp {
 
       scheduler = (JobScheduler) applicationContext.getBean(BN_JOB_SCHEDULER);
       syncJob = (COREBatchSyncJob) applicationContext.getBean(BN_SYNC_JOB);
+      syncJob.setManualUpdate(isManualUpdate);
       applicationContext.close();
     } catch (Exception e) {
       logger.error("Could not configure from {}: ", appContextLocation, e);

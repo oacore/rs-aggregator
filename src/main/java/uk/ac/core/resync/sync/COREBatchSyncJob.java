@@ -53,6 +53,7 @@ public class COREBatchSyncJob implements Job {
     private String uriListLocation;
     private String baseDirectory;
     private SyncWorker coreSyncWorker;
+    private boolean manualUpdate;
 
     public SitemapConverterProvider getSitemapConverterProvider() {
         if (sitemapConverterProvider == null) {
@@ -198,7 +199,9 @@ public class COREBatchSyncJob implements Job {
         SyncWorker syncWorker =getCORESyncWorker()
                 .withSitemapCollector(sitemapCollector)
                 .withVerificationPolicy(getVerificationPolicy())
-                .withResourceManager(new COREBatchResourceManager().withResourceReader(new COREResourceReader(this.getHttpClient())));
+                .withResourceManager(new COREBatchResourceManager(this.isManualUpdate()).withResourceReader(new COREResourceReader(this.getHttpClient())));
+
+
         SyncPostProcessor syncPostProcessor = getSyncPostProcessor();
 
         for (URI uri : uriList) {
@@ -239,5 +242,13 @@ public class COREBatchSyncJob implements Job {
 
     public void setCoreSyncWorker(SyncWorker coreSyncWorker) {
         this.coreSyncWorker = coreSyncWorker;
+    }
+
+    public boolean isManualUpdate() {
+        return manualUpdate;
+    }
+
+    public void setManualUpdate(boolean manualUpdate) {
+        this.manualUpdate = manualUpdate;
     }
 }

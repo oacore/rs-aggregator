@@ -33,9 +33,19 @@ public class COREBatchResourceManager extends FsResourceManager implements Batch
 
     private String coreApiEndpoint;
 
+    private boolean manualUpdate = false;
+
     Set<URI> buffer = new HashSet<>();
     private final static String CORE_DEFAULT_API_ENDPOINT = "https://core.ac.uk/datadump";
 
+    public COREBatchResourceManager(boolean manualUpdate) {
+        super();
+        this.manualUpdate = manualUpdate;
+    }
+
+    public COREBatchResourceManager() {
+        super();
+    }
 
     @Override
     public boolean create(@Nonnull URI normalizedURI) {
@@ -135,5 +145,13 @@ public class COREBatchResourceManager extends FsResourceManager implements Batch
 
     public void setCoreApiEndpoint(String coreApiEndpoint) {
         this.coreApiEndpoint = coreApiEndpoint;
+    }
+
+    public boolean isManualUpdate() {
+        return manualUpdate;
+    }
+
+    public void setManualUpdate(boolean manualUpdate) {
+        this.manualUpdate = manualUpdate;
     }
 }

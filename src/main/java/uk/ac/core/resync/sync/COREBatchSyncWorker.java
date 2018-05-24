@@ -10,12 +10,11 @@ import org.slf4j.LoggerFactory;
 import uk.ac.core.resync.syncore.COREBatchResourceManager;
 
 import javax.xml.bind.JAXBException;
-import java.io.ByteArrayInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -34,7 +33,7 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
     private RsRoot mainManifest;
     private Integer attempts;
     private final static Integer MAX_RETRIES = 5;
-    private static final int[] FIBONACCI = new int[] { 1, 2, 3, 5, 8, 13 };
+    private static final int[] FIBONACCI = new int[]{1, 2, 3, 5, 8, 13};
 
     public COREBatchSyncWorker() {
         super();
@@ -45,6 +44,7 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
     @Override
     protected void syncLocalResources(PathFinder pathFinder, RsProperties syncProps) {
 
+        this.logger.info(this.getCOREBatchResourceManager().isManualUpdate()?"THIS PROGRAM WON'T UPDATE THE CHANGELIST ENDPOINT":"THIS PROGRAM WILL AUTOMATICALLY UPDATE THE CHANGELIST ENDPOINT");
 
         this.pathFinder = pathFinder;
 
@@ -61,6 +61,7 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
 
 
         }
+        logger.info(String.valueOf(collector.getUltimateChangeListFrom().toInstant().toEpochMilli()));
         totalFailures = failedCreations + failedUpdates + failedDeletions + failedRemains;
 
         syncComplete = !trialRun && !collector.hasErrors() && preventedActions == 0 && totalFailures == 0;
@@ -73,12 +74,14 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
                 failedCreations, itemsUpdated,
                 failedUpdates, itemsRemain, failedRemains,
                 itemsDeleted, failedDeletions, itemsNoAction, trialRun, pathFinder.getCapabilityListUri());
-        /**       Path path = Paths.get("cfg/uri-list.txt");
-         try (BufferedWriter writer = Files.newBufferedWriter(path)) {
-         writer.write("http://core.ac.uk/resync/changelist/"+System.currentTimeMillis()+"/changelist_index.xml");
-         } catch (IOException e) {
-         logger.error("Failed to write cfg/uri-list.txt");
-         }**/
+        if (!this.getCOREBatchResourceManager().isManualUpdate()) {
+            Path path = Paths.get("cfg/uri-list.txt");
+            try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+                writer.write("http://core.ac.uk/resync/changelist/" + collector.getUltimateChangeListFrom().toInstant().toEpochMilli() + "/changelist_index.xml");
+            } catch (IOException e) {
+                logger.error("Failed to write cfg/uri-list.txt");
+            }
+        }
         logger.info("Next changelist to download http://core.ac.uk/resync/changelist/{}/changelist_index.xml", System.currentTimeMillis());
     }
 
@@ -113,14 +116,14 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
         itemCount += urisToSync.size();
         this.getCOREBatchResourceManager().clearBatch();
         urisToSync.forEach(e -> verifyAndAddToBatch(e));
-        this.attempts=1;
+        this.attempts = 1;
         boolean batchDownloadSuccess = this.getCOREBatchResourceManager().performBatchDownload();
         downloadCount++;
         if (!batchDownloadSuccess) {
             totalFailures++;
         }
 
-        while (!batchDownloadSuccess && this.attempts <MAX_RETRIES){
+        while (!batchDownloadSuccess && this.attempts < MAX_RETRIES) {
             this.attempts++;
             Integer toWait = FIBONACCI[this.attempts] * 1000;
             logger.info("Exponential backoff. Waiting for {}", toWait);
@@ -130,7 +133,7 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
                 logger.error("Exponential backoff interrupted");
             }
 
-            batchDownloadSuccess= this.getCOREBatchResourceManager().performBatchDownload();
+            batchDownloadSuccess = this.getCOREBatchResourceManager().performBatchDownload();
             downloadCount++;
             if (!batchDownloadSuccess) {
                 totalFailures++;
