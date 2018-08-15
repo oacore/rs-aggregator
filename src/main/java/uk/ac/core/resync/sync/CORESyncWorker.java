@@ -11,6 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.core.resync.syncore.COREResourceManager;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 /**
  * Created by mc26486 on 15/01/2018.
  */
@@ -91,6 +94,8 @@ public class CORESyncWorker extends SyncWorker implements SitemapDownloadedListe
                 itemsDeleted, failedDeletions, itemsNoAction, trialRun, pathFinder.getCapabilityListUri());
 
     }
+
+
 
     private CORESitemapCollector getCORESitemapCollector() {
         return (CORESitemapCollector) getSitemapCollector();

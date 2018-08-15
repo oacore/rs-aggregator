@@ -19,9 +19,13 @@ import uk.ac.core.resync.syncore.COREPathFinder;
 import uk.ac.core.resync.syncore.COREResourceManager;
 
 import javax.xml.bind.JAXBException;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -54,6 +58,9 @@ public class COREBatchSyncJob implements Job {
     private String baseDirectory;
     private SyncWorker coreSyncWorker;
     private boolean manualUpdate;
+    private boolean measure;
+    private String uriToDownload;
+    private int batchSize;
 
     public SitemapConverterProvider getSitemapConverterProvider() {
         if (sitemapConverterProvider == null) {
@@ -176,14 +183,23 @@ public class COREBatchSyncJob implements Job {
 
     public void readListAndSynchronize() throws Exception {
         List<URI> uriList = new ArrayList<>();
-        Scanner scanner = new Scanner(new File(getUriListLocation()));
-        while (scanner.hasNextLine()) {
-            String uriString = scanner.nextLine();
-            Optional<URI> maybeUri = NormURI.normalize(uriString);
+        if (!this.getUriToDownload().isEmpty()){
+            Optional<URI> maybeUri = NormURI.normalize(this.getUriToDownload());
             if (maybeUri.isPresent()) {
                 uriList.add(maybeUri.get());
             } else {
-                logger.warn("Unable to convert {} to a URI", uriString);
+                logger.warn("Unable to convert {} to a URI", this.getUriToDownload());
+            }
+        }else {
+            Scanner scanner = new Scanner(new File(getUriListLocation()));
+            while (scanner.hasNextLine()) {
+                String uriString = scanner.nextLine();
+                Optional<URI> maybeUri = NormURI.normalize(uriString);
+                if (maybeUri.isPresent()) {
+                    uriList.add(maybeUri.get());
+                } else {
+                    logger.warn("Unable to convert {} to a URI", uriString);
+                }
             }
         }
         synchronize(uriList);
@@ -201,18 +217,40 @@ public class COREBatchSyncJob implements Job {
                 .withVerificationPolicy(getVerificationPolicy())
                 .withResourceManager(new COREBatchResourceManager(this.isManualUpdate()).withResourceReader(new COREResourceReader(this.getHttpClient())));
 
+        if (this.batchSize>0){
+            ((COREBatchSyncWorker)syncWorker).setBatchSize(batchSize);
+        }else {
+            ((COREBatchSyncWorker)syncWorker).setBatchSize(COREBatchSyncWorker.DEFAULT_BATCH_SIZE);
+        }
 
         SyncPostProcessor syncPostProcessor = getSyncPostProcessor();
-
+        long start = 0;
         for (URI uri : uriList) {
+            if (this.isMeasure()){
+                start=System.currentTimeMillis();
+            }
             PathFinder pathFinder = new COREPathFinder(getBaseDirectory(), uri);
             RsProperties currentSyncProps = new RsProperties();
             setLatestSyncRun(pathFinder, sitemapCollector);
 
             sitemapConverterProvider.setPathFinder(pathFinder);
             syncWorker.synchronize(pathFinder, currentSyncProps);
+            if (this.isMeasure()){
+                Long duration = System.currentTimeMillis()-start;
+                this.track(uri, duration, syncWorker);
+            }
             syncPostProcessor.postProcess(sitemapCollector.getCurrentIndex(), pathFinder, currentSyncProps);
         }
+    }
+
+    private void track(URI uri, Long duration, SyncWorker syncWorker) {
+        Path path = Paths.get("resync_measures.csv");
+        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+            writer.write(uri.toString() + "," +batchSize+","+ duration+ "," +((COREBatchSyncWorker)syncWorker).printMetrics() + "\n");
+        } catch (IOException e) {
+            logger.error("Failed to write resync_measures.csv");
+        }
+
     }
 
     private void setLatestSyncRun(PathFinder pathFinder, SitemapCollector sitemapCollector) {
@@ -250,5 +288,29 @@ public class COREBatchSyncJob implements Job {
 
     public void setManualUpdate(boolean manualUpdate) {
         this.manualUpdate = manualUpdate;
+    }
+
+    public String getUriToDownload() {
+        return uriToDownload;
+    }
+
+    public void setUriToDownload(String uriToDownload) {
+        this.uriToDownload = uriToDownload;
+    }
+
+    public boolean isMeasure() {
+        return measure;
+    }
+
+    public void setMeasure(boolean measure) {
+        this.measure = measure;
+    }
+
+    public int getBatchSize() {
+        return batchSize;
+    }
+
+    public void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
     }
 }

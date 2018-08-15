@@ -15,6 +15,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -26,7 +27,8 @@ import java.util.stream.Stream;
 public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloadedListener {
 
     private final static Logger logger = LoggerFactory.getLogger(COREBatchSyncWorker.class);
-    private static final int COREAPI_BATCH_SIZE = 100;
+    public static final int DEFAULT_BATCH_SIZE = 100;
+    private int batchSize;
     private CORESitemapCollector collector;
     private PathFinder pathFinder;
     private FileWriter fileWriter;
@@ -37,12 +39,12 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
 
     public COREBatchSyncWorker() {
         super();
-        this.logger.info("Batch size is: {}", COREAPI_BATCH_SIZE);
 
     }
 
     @Override
     protected void syncLocalResources(PathFinder pathFinder, RsProperties syncProps) {
+        this.logger.info("Batch size is: {}", batchSize);
 
         this.logger.info(this.getCOREBatchResourceManager().isManualUpdate()?"THIS PROGRAM WON'T UPDATE THE CHANGELIST ENDPOINT":"THIS PROGRAM WILL AUTOMATICALLY UPDATE THE CHANGELIST ENDPOINT");
 
@@ -77,12 +79,12 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
         if (!this.getCOREBatchResourceManager().isManualUpdate()) {
             Path path = Paths.get("cfg/uri-list.txt");
             try (BufferedWriter writer = Files.newBufferedWriter(path)) {
-                writer.write("http://core.ac.uk/resync/changelist/" + collector.getUltimateChangeListFrom().toInstant().toEpochMilli() + "/changelist_index.xml");
+                writer.write("https://core.ac.uk/resync/changelist/" + collector.getUltimateChangeListFrom().toInstant().toEpochMilli() + "/changelist_index.xml");
             } catch (IOException e) {
                 logger.error("Failed to write cfg/uri-list.txt");
             }
         }
-        logger.info("Next changelist to download http://core.ac.uk/resync/changelist/{}/changelist_index.xml", System.currentTimeMillis());
+        logger.info("Next changelist to download https://core.ac.uk/resync/changelist/{}/changelist_index.xml", System.currentTimeMillis());
     }
 
 
@@ -102,7 +104,7 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
                 if (content instanceof Urlset) {
                     Urlset urlSet = (Urlset) content;
 
-                    this.batches(urlSet.getItemList(), COREAPI_BATCH_SIZE).forEach(e -> syncBatchItems(e));
+                    this.batches(urlSet.getItemList(), this.getBatchSize()).forEach(e -> syncBatchItems(e));
                 }
 
             }
@@ -251,5 +253,21 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
         return urisToSync.stream().filter(e -> e.getLoc().equals(item.getLoc())).findFirst().orElse(null).getNormalizedUri().get();
     }
 
+    public String printMetrics(){
 
+        String metrics = Arrays.stream(new int[] {itemCount, verifiedItems, totalFailures, downloadCount, itemsCreated,
+                failedCreations, itemsUpdated,
+                failedUpdates, itemsRemain, failedRemains,itemsDeleted, failedDeletions, itemsNoAction})
+                .mapToObj(String::valueOf)
+                .collect(Collectors.joining(","));
+        return metrics;
+    }
+
+    public int getBatchSize() {
+        return batchSize;
+    }
+
+    public void setBatchSize(int batch_size) {
+        this.batchSize = batch_size;
+    }
 }
