@@ -2,6 +2,7 @@ package nl.knaw.dans.rs.aggregator.http;
 
 import nl.knaw.dans.rs.aggregator.util.LambdaUtil;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.ConnectionClosedException;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -62,7 +63,17 @@ public class ResourceReader extends AbstractUriReader {
           file.setLastModified(date.getTime());
         }
 
-      } finally {
+      }
+      catch (ConnectionClosedException e){
+        logger.error("Connection closed prematurely, seeing if we can get this through anyway.", e);
+        Header lmh = response.getFirstHeader("Last-Modified");
+        if (lmh != null) {
+          Date date = DateUtils.parseDate(lmh.getValue());
+          file.setLastModified(date.getTime());
+        }
+        return file;
+      }
+      finally {
         IOUtils.closeQuietly(instream);
         IOUtils.closeQuietly(outstream);
       }

@@ -32,11 +32,33 @@ public class CORESyncApp {
 
   public static void main(String[] args) throws Exception {
     logger.info(RS_ART);
+    boolean isManualUpdate = true;
+    boolean isMeasured = false;
+    String uriToDownload = "";
     String appContextLocation;
+    int batchSize=0;
+    Integer max =0;
+    appContextLocation = APP_CONTEXT_LOCATION;
     if (args.length > 0) {
-      appContextLocation = args[0];
-    } else {
-      appContextLocation = APP_CONTEXT_LOCATION;
+      for (String arg : args) {
+        logger.info(arg);
+        if (arg.equals("--autoupdate")) {
+          isManualUpdate = false;
+        } else if (arg.startsWith("--uri=")) {
+          String[] parts = arg.split("=");
+          uriToDownload = parts[1];
+        }
+       else if (arg.startsWith("--measure")) {
+          isMeasured=true;
+        }
+        else if (arg.startsWith("--max")) {
+          String[] parts = arg.split("=");
+          max = Integer.valueOf(parts[1]);
+        }
+        else {
+          appContextLocation = arg;
+        }
+      }
     }
     logger.info("Configuration file: {}", appContextLocation);
 
@@ -46,6 +68,9 @@ public class CORESyncApp {
 
       scheduler = (JobScheduler) applicationContext.getBean(BN_JOB_SCHEDULER);
       syncJob = (CORESyncJob) applicationContext.getBean(BN_SYNC_JOB);
+        syncJob.setUriToDownload(uriToDownload);
+        syncJob.setMeasure(isMeasured);
+        syncJob.setMaxRecordsToDownload(max);
       applicationContext.close();
     } catch (Exception e) {
       logger.error("Could not configure from {}: ", appContextLocation, e);

@@ -36,6 +36,8 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
     private Integer attempts;
     private final static Integer MAX_RETRIES = 5;
     private static final int[] FIBONACCI = new int[]{1, 2, 3, 5, 8, 13};
+    private int maxRecordsToDownload;
+    private boolean forceStop;
 
     public COREBatchSyncWorker() {
         super();
@@ -45,6 +47,8 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
     @Override
     protected void syncLocalResources(PathFinder pathFinder, RsProperties syncProps) {
         this.logger.info("Batch size is: {}", batchSize);
+
+
 
         this.logger.info(this.getCOREBatchResourceManager().isManualUpdate()?"THIS PROGRAM WON'T UPDATE THE CHANGELIST ENDPOINT":"THIS PROGRAM WILL AUTOMATICALLY UPDATE THE CHANGELIST ENDPOINT");
 
@@ -115,6 +119,9 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
 
 
     private void syncBatchItems(List<UrlItem> urisToSync) {
+        if (forceStop){
+            return;
+        }
         itemCount += urisToSync.size();
         this.getCOREBatchResourceManager().clearBatch();
         urisToSync.forEach(e -> verifyAndAddToBatch(e));
@@ -127,7 +134,7 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
 
         while (!batchDownloadSuccess && this.attempts < MAX_RETRIES) {
             this.attempts++;
-            Integer toWait = FIBONACCI[this.attempts] * 1000;
+            Integer toWait = FIBONACCI[this.attempts] * 1;
             logger.info("Exponential backoff. Waiting for {}", toWait);
             try {
                 Thread.sleep(toWait);
@@ -140,6 +147,7 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
             if (!batchDownloadSuccess) {
                 totalFailures++;
             }
+
         }
 
         Long numberOfVerified = this.doVerifyBatch(urisToSync);
@@ -151,6 +159,11 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
                 failedCreations, itemsUpdated,
                 failedUpdates, itemsRemain, failedRemains,
                 itemsDeleted, failedDeletions, itemsNoAction, trialRun, pathFinder.getCapabilityListUri());
+        logger.info("Max records: {}", this.maxRecordsToDownload);
+        if (itemCount>=this.maxRecordsToDownload){
+            logger.info("Completing download because reached the maxRecordsToDownload parameter");
+            this.forceStop=true;
+        }
     }
 
     private CORESitemapCollector getCORESitemapCollector() {
@@ -269,5 +282,13 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
 
     public void setBatchSize(int batch_size) {
         this.batchSize = batch_size;
+    }
+
+    public int getMaxRecordsToDownload() {
+        return maxRecordsToDownload;
+    }
+
+    public void setMaxRecordsToDownload(int maxRecordsToDownload) {
+        this.maxRecordsToDownload = maxRecordsToDownload;
     }
 }

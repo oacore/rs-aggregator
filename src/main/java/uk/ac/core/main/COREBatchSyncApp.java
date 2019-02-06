@@ -35,9 +35,11 @@ public class COREBatchSyncApp {
         String uriToDownload = "";
         String appContextLocation;
         int batchSize=0;
+        Integer max =0;
         appContextLocation = APP_CONTEXT_LOCATION;
         if (args.length > 0) {
             for (String arg : args) {
+                logger.info(arg);
                 if (arg.equals("--autoupdate")) {
                     isManualUpdate = false;
                 } else if (arg.startsWith("--uri=")) {
@@ -50,6 +52,10 @@ public class COREBatchSyncApp {
                 }
                 else if (arg.startsWith("--measure")) {
                     isMeasured=true;
+                }
+                else if (arg.startsWith("--max")) {
+                    String[] parts = arg.split("=");
+                    max = Integer.valueOf(parts[1]);
                 }
                 else {
                     appContextLocation = args[0];
@@ -77,6 +83,7 @@ public class COREBatchSyncApp {
             syncJob.setUriToDownload(uriToDownload);
             syncJob.setMeasure(isMeasured);
             syncJob.setBatchSize(batchSize);
+            syncJob.setMaxRecordsToDownload(max);
             applicationContext.close();
         } catch (Exception e) {
             logger.error("Could not configure from {}: ", appContextLocation, e);

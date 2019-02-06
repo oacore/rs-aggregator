@@ -6,7 +6,10 @@ import nl.knaw.dans.rs.aggregator.syncore.*;
 import nl.knaw.dans.rs.aggregator.util.NormURI;
 import nl.knaw.dans.rs.aggregator.util.RsProperties;
 import nl.knaw.dans.rs.aggregator.xml.ResourceSyncContext;
+import org.apache.http.client.CookieStore;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
@@ -22,10 +25,12 @@ import javax.xml.bind.JAXBException;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.net.CookiePolicy;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -61,6 +66,7 @@ public class COREBatchSyncJob implements Job {
     private boolean measure;
     private String uriToDownload;
     private int batchSize;
+    private int maxRecordsToDownload;
 
     public SitemapConverterProvider getSitemapConverterProvider() {
         if (sitemapConverterProvider == null) {
@@ -124,6 +130,7 @@ public class COREBatchSyncJob implements Job {
                 e.printStackTrace();
             }
             httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+
         }
 
         return httpClient;
@@ -223,6 +230,10 @@ public class COREBatchSyncJob implements Job {
             ((COREBatchSyncWorker)syncWorker).setBatchSize(COREBatchSyncWorker.DEFAULT_BATCH_SIZE);
         }
 
+        if (this.maxRecordsToDownload>0){
+            ((COREBatchSyncWorker)syncWorker).setMaxRecordsToDownload(maxRecordsToDownload);
+        }
+
         SyncPostProcessor syncPostProcessor = getSyncPostProcessor();
         long start = 0;
         for (URI uri : uriList) {
@@ -245,10 +256,10 @@ public class COREBatchSyncJob implements Job {
 
     private void track(URI uri, Long duration, SyncWorker syncWorker) {
         Path path = Paths.get("resync_measures.csv");
-        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+        try (BufferedWriter writer = Files.newBufferedWriter(path, StandardOpenOption.APPEND)) {
             writer.write(uri.toString() + "," +batchSize+","+ duration+ "," +((COREBatchSyncWorker)syncWorker).printMetrics() + "\n");
         } catch (IOException e) {
-            logger.error("Failed to write resync_measures.csv");
+            logger.error("Failed to write resync_measures.csv", e);
         }
 
     }
@@ -312,5 +323,13 @@ public class COREBatchSyncJob implements Job {
 
     public void setBatchSize(int batchSize) {
         this.batchSize = batchSize;
+    }
+
+    public int getMaxRecordsToDownload() {
+        return maxRecordsToDownload;
+    }
+
+    public void setMaxRecordsToDownload(int maxRecordsToDownload) {
+        this.maxRecordsToDownload = maxRecordsToDownload;
     }
 }

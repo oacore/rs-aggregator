@@ -36,7 +36,7 @@ public class COREBatchResourceManager extends FsResourceManager implements Batch
     private boolean manualUpdate = false;
 
     Set<URI> buffer = new HashSet<>();
-    private final static String CORE_DEFAULT_API_ENDPOINT = "https://fileserver.core.ac.uk/datadump";
+    private final static String CORE_DEFAULT_API_ENDPOINT = "https://core.ac.uk/datadump";
 
     public COREBatchResourceManager(boolean manualUpdate) {
         super();

@@ -21,14 +21,18 @@ public class COREResourceManager extends FsResourceManager {
     private static Logger logger = LoggerFactory.getLogger(COREResourceManager.class);
 
     private String coreApiEndpoint;
+    private int maxRecordsToDownload;
 
     private final static String CORE_DEFAULT_API_ENDPOINT =  "https://core.ac.uk/datadump";
+
 
     @Override
     public boolean create(@Nonnull URI normalizedURI) {
 
         return download(normalizedURI);
     }
+
+
 
     @Override
     public boolean update(@Nonnull URI normalizedURI) {
@@ -66,5 +70,13 @@ public class COREResourceManager extends FsResourceManager {
             coreApiEndpoint = CORE_DEFAULT_API_ENDPOINT;
         }
         return coreApiEndpoint;
+    }
+
+    public int getMaxRecordsToDownload() {
+        return maxRecordsToDownload;
+    }
+
+    public void setMaxRecordsToDownload(int maxRecordsToDownload) {
+        this.maxRecordsToDownload = maxRecordsToDownload;
     }
 }

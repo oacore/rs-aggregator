@@ -22,6 +22,9 @@ public class CORESyncWorker extends SyncWorker implements SitemapDownloadedListe
     private final static Logger logger = LoggerFactory.getLogger(CORESyncWorker.class);
     private CORESitemapCollector collector;
     private PathFinder pathFinder;
+    private int maxRecordsToDownload;
+
+
 
     public CORESyncWorker() {
         super();
@@ -39,7 +42,6 @@ public class CORESyncWorker extends SyncWorker implements SitemapDownloadedListe
             if (collector.hasNewResourceList() && !trialRun) {
                 resourceManager.keepOnly(collector.getMostRecentItems().keySet());
             }
-            //this.batches(new LinkedList<>(collector.getMostRecentItems().entrySet()), COREAPI_BATCH_SIZE).forEach(e -> syncBatchItems(e));
 
 
         }
@@ -82,7 +84,9 @@ public class CORESyncWorker extends SyncWorker implements SitemapDownloadedListe
     }
 
     private void executeDownload(UrlItem urlItem) {
-
+        if (itemCount>=this.maxRecordsToDownload){
+            return;
+        }
         syncItem(urlItem.getNormalizedUri().get(), urlItem);
         logger.info("====> synchronized={}, new ResourceList={}, items={}, verified={}, " +
                         "failures={}, downloads={} [success/failures] " +
@@ -105,6 +109,21 @@ public class CORESyncWorker extends SyncWorker implements SitemapDownloadedListe
         return (COREResourceManager) resourceManager;
     }
 
+    public int getMaxRecordsToDownload() {
+        return maxRecordsToDownload;
+    }
 
+    public String printMetrics(){
 
+        String metrics = Arrays.stream(new int[] {itemCount, verifiedItems, totalFailures, downloadCount, itemsCreated,
+                failedCreations, itemsUpdated,
+                failedUpdates, itemsRemain, failedRemains,itemsDeleted, failedDeletions, itemsNoAction})
+                .mapToObj(String::valueOf)
+                .collect(Collectors.joining(","));
+        return metrics;
+    }
+
+    public void setMaxRecordsToDownload(int maxRecordsToDownload) {
+        this.maxRecordsToDownload = maxRecordsToDownload;
+    }
 }

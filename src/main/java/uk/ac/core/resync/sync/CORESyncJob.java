@@ -6,6 +6,7 @@ import nl.knaw.dans.rs.aggregator.syncore.*;
 import nl.knaw.dans.rs.aggregator.util.NormURI;
 import nl.knaw.dans.rs.aggregator.util.RsProperties;
 import nl.knaw.dans.rs.aggregator.xml.ResourceSyncContext;
+
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -18,9 +19,14 @@ import uk.ac.core.resync.syncore.COREPathFinder;
 import uk.ac.core.resync.syncore.COREResourceManager;
 
 import javax.xml.bind.JAXBException;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -52,6 +58,11 @@ public class CORESyncJob implements Job {
     private String uriListLocation;
     private String baseDirectory;
     private SyncWorker coreSyncWorker;
+    private boolean manualUpdate;
+    private boolean measure;
+    private String uriToDownload;
+    private int batchSize;
+    private int maxRecordsToDownload;
 
     public SitemapConverterProvider getSitemapConverterProvider() {
         if (sitemapConverterProvider == null) {
@@ -102,6 +113,7 @@ public class CORESyncJob implements Job {
     public CloseableHttpClient getHttpClient() throws KeyStoreException, NoSuchAlgorithmException {
         if (httpClient == null) {
             httpClient = HttpClients.createDefault();
+
             SSLContextBuilder builder = new SSLContextBuilder();
             builder.loadTrustMaterial(null, new TrustStrategy() {
                 public boolean isTrusted(final X509Certificate[] chain, String authType) throws CertificateException {
@@ -115,7 +127,8 @@ public class CORESyncJob implements Job {
                 e.printStackTrace();
             }
             httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
-            httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+
+
         }
 
         return httpClient;
@@ -176,13 +189,22 @@ public class CORESyncJob implements Job {
     public void readListAndSynchronize() throws Exception {
         List<URI> uriList = new ArrayList<>();
         Scanner scanner = new Scanner(new File(getUriListLocation()));
-        while (scanner.hasNextLine()) {
-            String uriString = scanner.nextLine();
-            Optional<URI> maybeUri = NormURI.normalize(uriString);
+        if (!this.getUriToDownload().isEmpty()){
+            Optional<URI> maybeUri = NormURI.normalize(this.getUriToDownload());
             if (maybeUri.isPresent()) {
                 uriList.add(maybeUri.get());
             } else {
-                logger.warn("Unable to convert {} to a URI", uriString);
+                logger.warn("Unable to convert {} to a URI", this.getUriToDownload());
+            }
+        }else {
+            while (scanner.hasNextLine()) {
+                String uriString = scanner.nextLine();
+                Optional<URI> maybeUri = NormURI.normalize(uriString);
+                if (maybeUri.isPresent()) {
+                    uriList.add(maybeUri.get());
+                } else {
+                    logger.warn("Unable to convert {} to a URI", uriString);
+                }
             }
         }
         synchronize(uriList);
@@ -199,17 +221,42 @@ public class CORESyncJob implements Job {
                 .withSitemapCollector(sitemapCollector)
                 .withVerificationPolicy(getVerificationPolicy())
                 .withResourceManager(new COREResourceManager().withResourceReader(new COREResourceReader(this.getHttpClient())));
-        SyncPostProcessor syncPostProcessor = getSyncPostProcessor();
 
+
+        if (this.maxRecordsToDownload>0){
+            ((CORESyncWorker)syncWorker).setMaxRecordsToDownload(maxRecordsToDownload);
+        }
+
+
+        SyncPostProcessor syncPostProcessor = getSyncPostProcessor();
+        long start = 0;
         for (URI uri : uriList) {
+            if (this.isMeasure()){
+                start=System.currentTimeMillis();
+            }
             PathFinder pathFinder = new COREPathFinder(getBaseDirectory(), uri);
             RsProperties currentSyncProps = new RsProperties();
             setLatestSyncRun(pathFinder, sitemapCollector);
 
             sitemapConverterProvider.setPathFinder(pathFinder);
             syncWorker.synchronize(pathFinder, currentSyncProps);
+            if (this.isMeasure()){
+                Long duration = System.currentTimeMillis()-start;
+                this.track(uri, duration, syncWorker);
+            }
             syncPostProcessor.postProcess(sitemapCollector.getCurrentIndex(), pathFinder, currentSyncProps);
         }
+
+    }
+
+    private void track(URI uri, Long duration, SyncWorker syncWorker) {
+        Path path = Paths.get("resync_measures.csv");
+        try (BufferedWriter writer = Files.newBufferedWriter(path, StandardOpenOption.APPEND)) {
+            writer.write(uri.toString() + "," +batchSize+","+ duration+ "," +((CORESyncWorker)syncWorker).printMetrics() + "\n");
+        } catch (IOException e) {
+            logger.error("Failed to write resync_measures.csv", e);
+        }
+
     }
 
     private void setLatestSyncRun(PathFinder pathFinder, SitemapCollector sitemapCollector) {
@@ -239,5 +286,45 @@ public class CORESyncJob implements Job {
 
     public void setCoreSyncWorker(SyncWorker coreSyncWorker) {
         this.coreSyncWorker = coreSyncWorker;
+    }
+
+    public boolean isManualUpdate() {
+        return manualUpdate;
+    }
+
+    public void setManualUpdate(boolean manualUpdate) {
+        this.manualUpdate = manualUpdate;
+    }
+
+    public boolean isMeasure() {
+        return measure;
+    }
+
+    public void setMeasure(boolean measure) {
+        this.measure = measure;
+    }
+
+    public String getUriToDownload() {
+        return uriToDownload;
+    }
+
+    public void setUriToDownload(String uriToDownload) {
+        this.uriToDownload = uriToDownload;
+    }
+
+    public int getBatchSize() {
+        return batchSize;
+    }
+
+    public void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
+    }
+
+    public int getMaxRecordsToDownload() {
+        return maxRecordsToDownload;
+    }
+
+    public void setMaxRecordsToDownload(int maxRecordsToDownload) {
+        this.maxRecordsToDownload = maxRecordsToDownload;
     }
 }
