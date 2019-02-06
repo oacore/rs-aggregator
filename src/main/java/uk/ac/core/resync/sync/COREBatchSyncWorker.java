@@ -160,7 +160,7 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
                 failedUpdates, itemsRemain, failedRemains,
                 itemsDeleted, failedDeletions, itemsNoAction, trialRun, pathFinder.getCapabilityListUri());
         logger.info("Max records: {}", this.maxRecordsToDownload);
-        if (itemCount>=this.maxRecordsToDownload){
+        if (itemCount>=this.maxRecordsToDownload && this.maxRecordsToDownload>0){
             logger.info("Completing download because reached the maxRecordsToDownload parameter");
             this.forceStop=true;
         }
