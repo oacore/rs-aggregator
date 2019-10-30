@@ -6,17 +6,16 @@ import nl.knaw.dans.rs.aggregator.syncore.*;
 import nl.knaw.dans.rs.aggregator.util.NormURI;
 import nl.knaw.dans.rs.aggregator.util.RsProperties;
 import nl.knaw.dans.rs.aggregator.xml.ResourceSyncContext;
-import org.apache.http.client.CookieStore;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.TrustStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.core.configuration.S3Configuration;
 import uk.ac.core.resync.http.COREResourceReader;
+import uk.ac.core.resync.syncore.COREBatchAWSResourceManager;
 import uk.ac.core.resync.syncore.COREBatchResourceManager;
 import uk.ac.core.resync.syncore.COREPathFinder;
 import uk.ac.core.resync.syncore.COREResourceManager;
@@ -25,7 +24,6 @@ import javax.xml.bind.JAXBException;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.net.CookiePolicy;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -67,6 +65,7 @@ public class COREBatchSyncJob implements Job {
     private String uriToDownload;
     private int batchSize;
     private int maxRecordsToDownload;
+    private S3Configuration s3Configuration;
 
     public SitemapConverterProvider getSitemapConverterProvider() {
         if (sitemapConverterProvider == null) {
@@ -213,6 +212,13 @@ public class COREBatchSyncJob implements Job {
     }
 
     public void synchronize(List<URI> uriList) throws Exception {
+        COREBatchResourceManager resourceManager= null;
+        if (this.getS3Configuration()!=null){
+            resourceManager = new COREBatchAWSResourceManager(this.isManualUpdate(), this.getS3Configuration());
+        }else {
+            resourceManager = new COREBatchResourceManager(this.isManualUpdate());
+        }
+
         SitemapConverterProvider sitemapConverterProvider = getSitemapConverterProvider()
                 .withResourceSyncContext(getRsContext());
         SitemapCollector sitemapCollector = getSitemapCollector()
@@ -222,7 +228,7 @@ public class COREBatchSyncJob implements Job {
         SyncWorker syncWorker =getCORESyncWorker()
                 .withSitemapCollector(sitemapCollector)
                 .withVerificationPolicy(getVerificationPolicy())
-                .withResourceManager(new COREBatchResourceManager(this.isManualUpdate()).withResourceReader(new COREResourceReader(this.getHttpClient())));
+                .withResourceManager(resourceManager.withResourceReader(new COREResourceReader(this.getHttpClient())));
 
         if (this.batchSize>0){
             ((COREBatchSyncWorker)syncWorker).setBatchSize(batchSize);
@@ -293,6 +299,7 @@ public class COREBatchSyncJob implements Job {
         this.coreSyncWorker = coreSyncWorker;
     }
 
+
     public boolean isManualUpdate() {
         return manualUpdate;
     }
@@ -331,5 +338,13 @@ public class COREBatchSyncJob implements Job {
 
     public void setMaxRecordsToDownload(int maxRecordsToDownload) {
         this.maxRecordsToDownload = maxRecordsToDownload;
+    }
+
+    public S3Configuration getS3Configuration() {
+        return s3Configuration;
+    }
+
+    public void setS3Configuration(S3Configuration s3Configuration) {
+        this.s3Configuration = s3Configuration;
     }
 }

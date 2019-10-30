@@ -6,7 +6,7 @@
 
     <groupId>nl.knaw.dans.rad</groupId>
     <artifactId>rs-aggregator</artifactId>
-    <version>2.0.1</version>
+    <version>2.0.2</version>
     <name>${project.groupId}:${project.artifactId}</name>
     <description>Library containing classes and interfaces to set up an aggregator as the Destination within
         the ResourceSync Framework Specification.</description>
@@ -171,6 +171,26 @@
             <groupId>javax.activation</groupId>
             <artifactId>activation</artifactId>
             <version>1.1.1</version>
+        </dependency>
+        <!-- AWS Extension -->
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+            <version>1.11.271</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+            <version>1.11.271</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-core</artifactId>
+            <version>1.11.271</version>
         </dependency>
     </dependencies>
 

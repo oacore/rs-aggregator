@@ -100,7 +100,7 @@ public class COREBatchResourceManager extends FsResourceManager implements Batch
     public void clearBatch(){
         buffer.clear();
     }
-    private void unzipDump(File resourcePath) throws IOException {
+    protected void unzipDump(File resourcePath) throws IOException {
         byte[] buffer = new byte[1024];
         ZipInputStream zis = new ZipInputStream(new FileInputStream(resourcePath));
         ZipEntry zipEntry = zis.getNextEntry();

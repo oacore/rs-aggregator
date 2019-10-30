@@ -7,6 +7,7 @@ import nl.knaw.dans.rs.aggregator.util.RsProperties;
 import nl.knaw.dans.rs.aggregator.xml.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.core.resync.syncore.COREBatchAWSResourceManager;
 import uk.ac.core.resync.syncore.COREBatchResourceManager;
 
 import javax.xml.bind.JAXBException;
@@ -149,8 +150,13 @@ public class COREBatchSyncWorker extends SyncWorker implements SitemapDownloaded
             }
 
         }
-
-        Long numberOfVerified = this.doVerifyBatch(urisToSync);
+        Long numberOfVerified = 0L;
+        //no verification if using aws
+        if (!(this.resourceManager instanceof COREBatchAWSResourceManager)) {
+           numberOfVerified = this.doVerifyBatch(urisToSync);
+        }else {
+            numberOfVerified=0L;
+        }
         logger.info("====> synchronized={}, new ResourceList={}, items={}, verified={}, " +
                         "failures={}, downloads={} [success/failures] " +
                         "created={}/{}, updated={}/{}, remain={}/{}, deleted={}/{}, " +

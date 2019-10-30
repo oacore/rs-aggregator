@@ -4,7 +4,14 @@ import nl.knaw.dans.rs.aggregator.schedule.JobScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
+import uk.ac.core.configuration.S3Configuration;
 import uk.ac.core.resync.sync.COREBatchSyncJob;
+
+import javax.naming.ConfigurationException;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 
 /**
  * Created on 2017-05-04 16:47.
@@ -36,6 +43,7 @@ public class COREBatchSyncApp {
         String appContextLocation;
         int batchSize=0;
         Integer max =0;
+        S3Configuration s3Configuration=null;
         appContextLocation = APP_CONTEXT_LOCATION;
         if (args.length > 0) {
             for (String arg : args) {
@@ -56,6 +64,27 @@ public class COREBatchSyncApp {
                 else if (arg.startsWith("--max")) {
                     String[] parts = arg.split("=");
                     max = Integer.valueOf(parts[1]);
+                }
+                else if (arg.startsWith("--aws-conf")) {
+                    String[] parts = arg.split("=");
+                    String awsConf =parts[1];
+                    try (InputStream input = new FileInputStream(awsConf)) {
+
+                        Properties prop = new Properties();
+
+                        // load a properties file
+                        prop.load(input);
+                        s3Configuration = new S3Configuration();
+                        s3Configuration.setAccessKey(prop.getProperty("accessKey"));
+                        s3Configuration.setSecretKey(prop.getProperty("secretKey"));
+                        s3Configuration.setBucketName(prop.getProperty("bucketName"));
+                        s3Configuration.setRegion(prop.getProperty("region"));
+
+                    } catch (IOException ex) {
+                        throw new ConfigurationException("Error reading configuration file for AWS");
+                    }
+
+
                 }
                 else {
                     appContextLocation = args[0];
@@ -84,6 +113,7 @@ public class COREBatchSyncApp {
             syncJob.setMeasure(isMeasured);
             syncJob.setBatchSize(batchSize);
             syncJob.setMaxRecordsToDownload(max);
+            syncJob.setS3Configuration(s3Configuration);
             applicationContext.close();
         } catch (Exception e) {
             logger.error("Could not configure from {}: ", appContextLocation, e);
